@@ -11,10 +11,10 @@ function getRandomInt(min, max) {
 
 function loadQuestion(testData) {
   if (testData) {
-    let ThemeRandom = getRandomInt(1, 63);
+    let ThemeRandom = 26; //getRandomInt(1, 63);
 
     const section = testData.sections.find((s) => s.number === ThemeRandom);
-    let QuestionRandom = getRandomInt(1, section.questions.length);
+    let QuestionRandom = 1; //getRandomInt(1, section.questions.length);
 
     let questionText = section.questions.find(
       (q) => q.number === QuestionRandom,
@@ -29,6 +29,15 @@ function loadQuestion(testData) {
         button.style.display = "none";
       }
     });
+
+    const image = document.getElementById("image");
+    if (questionText.images && questionText.images.length > 0) {
+      image.src = `/images/${questionText.images[0]}`;
+      image.style.display = "block";
+    } else {
+      image.style.display = "none";
+      image.removeAttribute("src");
+    }
   }
 }
 
