@@ -11,10 +11,10 @@ function getRandomInt(min, max) {
 
 function loadQuestion(testData) {
   if (testData) {
-    let ThemeRandom = 26; //getRandomInt(1, 63);
+    let ThemeRandom = getRandomInt(1, 63);
 
     const section = testData.sections.find((s) => s.number === ThemeRandom);
-    let QuestionRandom = 1; //getRandomInt(1, section.questions.length);
+    let QuestionRandom = getRandomInt(1, section.questions.length);
 
     let questionText = section.questions.find(
       (q) => q.number === QuestionRandom,
@@ -30,13 +30,24 @@ function loadQuestion(testData) {
       }
     });
 
-    const image = document.getElementById("image");
+    const container = document.getElementById("image-container");
+    const oldImages = container.querySelectorAll("img");
+
+    oldImages.forEach((img) => img.remove());
+
     if (questionText.images && questionText.images.length > 0) {
-      image.src = `/images/${questionText.images[0]}`;
-      image.style.display = "block";
-    } else {
-      image.style.display = "none";
-      image.removeAttribute("src");
+      questionText.images.forEach((imgName) => {
+        const newImg = document.createElement("img");
+        newImg.src = `/images/${imgName}`;
+
+        if (questionText.images.length === 1) {
+          newImg.classList.add("large-image");
+        } else {
+          newImg.classList.add("small-image");
+        }
+
+        container.appendChild(newImg);
+      });
     }
   }
 }
