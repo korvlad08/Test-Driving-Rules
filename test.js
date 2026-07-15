@@ -2,6 +2,31 @@ const question = document.getElementById("question");
 const buttons = document.querySelectorAll(".button");
 
 let testData = null;
+let answerData = null;
+let ThemeRandom = null;
+let QuestionRandom = null;
+let corectAnswer = null;
+
+Promise.all([
+  fetch("tests.json").then((res) => {
+    if (!res.ok) throw new Error("Помилка завантаження tests.json");
+    return res.json();
+  }),
+  fetch("answers.json").then((res) => {
+    if (!res.ok) throw new Error("Помилка завантаження answers.json");
+    return res.json();
+  }),
+])
+  .then(([tests, answers]) => {
+    testData = tests;
+    answerData = answers;
+
+    loadQuestion(testData);
+    findCorrectAnswer();
+  })
+  .catch((error) => {
+    console.error("Виникла помилка при завантаженні даних:", error);
+  });
 
 function getRandomInt(min, max) {
   min = Math.ceil(min);
@@ -10,59 +35,74 @@ function getRandomInt(min, max) {
 }
 
 function loadQuestion(testData) {
-  if (testData) {
-    let ThemeRandom = getRandomInt(1, 63);
+  if (testData && testData.sections && testData.sections.length > 0) {
+    // 1. Вибираємо випадковий ІНДЕКС секції (від 0 до кількості секцій - 1)
+    const randomSectionIndex = getRandomInt(0, testData.sections.length - 1);
+    const section = testData.sections[randomSectionIndex];
 
-    const section = testData.sections.find((s) => s.number === ThemeRandom);
-    let QuestionRandom = getRandomInt(1, section.questions.length);
+    // Запам'ятовуємо РЕАЛЬНИЙ номер теми
+    ThemeRandom = section.number;
 
-    let questionText = section.questions.find(
-      (q) => q.number === QuestionRandom,
-    );
+    if (section.questions && section.questions.length > 0) {
+      // 2. Вибираємо випадковий ІНДЕКС питання в цій секції
+      const randomQuestionIndex = getRandomInt(0, section.questions.length - 1);
+      const questionText = section.questions[randomQuestionIndex];
 
-    question.textContent = questionText.question;
-    buttons.forEach((button, index) => {
-      if (index < questionText.options.length) {
-        button.style.display = "inline-block";
-        button.textContent = questionText.options[index].text;
-      } else {
-        button.style.display = "none";
-      }
-    });
+      // Запам'ятовуємо РЕАЛЬНИЙ номер питання
+      QuestionRandom = questionText.number;
 
-    const container = document.getElementById("image-container");
-    const oldImages = container.querySelectorAll("img");
+      // Відображаємо текст питання
+      question.textContent = questionText.question;
 
-    oldImages.forEach((img) => img.remove());
-
-    if (questionText.images && questionText.images.length > 0) {
-      questionText.images.forEach((imgName) => {
-        const newImg = document.createElement("img");
-        newImg.src = `/images/${imgName}`;
-
-        if (questionText.images.length === 1) {
-          newImg.classList.add("large-image");
+      // Налаштовуємо кнопки відповідей
+      buttons.forEach((button, index) => {
+        if (index < questionText.options.length) {
+          button.style.display = "inline-block";
+          button.textContent = questionText.options[index].text;
+          button.dataset.number = index + 1;
         } else {
-          newImg.classList.add("small-image");
+          button.style.display = "none";
         }
-
-        container.appendChild(newImg);
       });
+
+      // Логіка для зображень
+      const container = document.getElementById("image-container");
+      const oldImages = container.querySelectorAll("img");
+      oldImages.forEach((img) => img.remove());
+
+      if (questionText.images && questionText.images.length > 0) {
+        questionText.images.forEach((imgName) => {
+          const newImg = document.createElement("img");
+          newImg.src = `/images/${imgName}`;
+
+          if (questionText.images.length === 1) {
+            newImg.classList.add("large-image");
+          } else {
+            newImg.classList.add("small-image");
+          }
+          container.appendChild(newImg);
+        });
+      }
     }
   }
 }
 
-fetch("tests.json")
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error("Помилка завантаження файлу");
+function findCorrectAnswer() {
+  const themeNumber = answerData.find((s) => s.number === ThemeRandom);
+  const questionAnswer = themeNumber.questions.find(
+    (q) => q.number === QuestionRandom,
+  );
+  corectAnswer = questionAnswer.answer;
+
+  console.log("Correct answer:", corectAnswer);
+}
+
+buttons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.number == corectAnswer) {
+      alert("Вірно!");
+    } else {
+      alert("Невірно!");
     }
-    return response.json();
-  })
-  .then((data) => {
-    testData = data;
-    loadQuestion(testData);
-  })
-  .catch((error) => {
-    console.error("Виникла помилка:", error);
   });
+});
